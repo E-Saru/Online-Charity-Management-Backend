@@ -126,3 +126,42 @@ class Donor(db.Model):
 
     def __repr__(self):
         return f'<User {self.email}>'
+    
+
+class DonationRequest(db.Model):
+
+    __tablename__ = 'donations_requests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    ngo_id = db.Column(db.Integer, db.ForeignKey('Ngos.id'))
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'))
+    donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    title = db.Column(db.String, nullable=False)
+    reason = db.Column(db.String, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String)
+
+
+class Donation(db.Model):
+
+    __tablename__ = 'donations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    donation_req_id = db.Column(db.Integer, db.ForeignKey('donations_requests.id'))
+    ngo_id = db.Column(db.Integer, db.ForeignKey('Ngos.id'))
+    amount_id = db.Column(db.Integer)
+    date = db.Column(db.Date)
+
+class Category(db.Model):
+
+    __tablename__ = 'categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String)
+    description = db.Column(db.String)
+
+if __name__ == "__main__":
+    db.create_all()  
