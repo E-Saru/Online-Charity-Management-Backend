@@ -20,85 +20,79 @@ metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
 
-class Admin(db.Model, SerializerMixin):
-    __tablename__ = 'admins'
+
+class User(db.Model, SerializerMixin):
+    __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String, nullable=False)
-    last_name = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False, unique=True)
     _password_hash = db.Column(db.String, nullable=False)
+    role = db.Column(db.String, nullable=False)  
+    location = db.Column(db.String)
+    description = db.Column(db.String)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    img = db.Column(db.String)
+    contacts = db.Column(db.Integer, nullable=False)
 
-    @hybrid_property
-    def password(self):
-        raise AttributeError('Password is not accessible.')
+    category = db.relationship("Category", back_populates="users")
 
-    @password.setter
-    def password(self, password):
+    def set_password(self, password):
         self._password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    def authenticate(self, password):
+    def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self._password_hash.encode('utf-8'))
 
     def __repr__(self):
-        return f'<Admin {self.email}>'
-
-class NGO(db.Model, SerializerMixin):
-    __tablename__ = 'ngos'  
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, nullable=False, unique=True)
-    ph_number = db.Column(db.String, nullable=False, unique=True)
-    _password_hash = db.Column(db.String, nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id')) 
-
-    def __repr__(self):
-        return f'<NGO {self.email}>'
-
-class Donor(db.Model, SerializerMixin):
-    __tablename__ = 'donors'
+        return f'<User {self.role} {self.email}>'
+    
+class DonationRequest(db.Model, SerializerMixin): 
+    __tablename__ = 'donationrequest'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, nullable=False, unique=True)
-    reason = db.Column(db.Text, nullable=False)
-    ph_number = db.Column(db.String, nullable=False, unique=True)
-    _password_hash = db.Column(db.String, nullable=False)
-
-    def __repr__(self):
-        return f'<Donor {self.email}>'
-
-class DonationRequest(db.Model, SerializerMixin):
-    __tablename__ = 'donation_requests'
-
-    id = db.Column(db.Integer, primary_key=True)
-    ngo_id = db.Column(db.Integer, db.ForeignKey('ngos.id'))
-    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  
-    donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'), nullable=True)  
+    ngo_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    donor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     title = db.Column(db.String, nullable=False)
-    reason = db.Column(db.String, nullable=False)
-    amount = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String, nullable=False, default='pending')  
+    reason = db.Column(db.Text, nullable=False)
+    amount_requested = db.Column(db.Integer, nullable=False)
+    balance = db.Column(db.Integer, default=amount_requested)  
+    status = db.Column(db.String, nullable=False, default='pending')
 
-class Donation(db.Model, SerializerMixin):
+    ngo = db.relationship("User", foreign_keys=[ngo_id])
+    admin = db.relationship("User", foreign_keys=[admin_id])
+    donor = db.relationship("User", foreign_keys=[donor_id])
+    category = db.relationship("Category", back_populates="donation_requests")
+
+class Donation(db.Model, SerializerMixin): 
     __tablename__ = 'donations'
 
     id = db.Column(db.Integer, primary_key=True)
-    donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'))
-    donation_request_id = db.Column(db.Integer, db.ForeignKey('donation_requests.id'))
-    ngo_id = db.Column(db.Integer, db.ForeignKey('ngos.id'))
+    donor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    donation_request_id = db.Column(db.Integer, db.ForeignKey('donationrequest.id'))
+    ngo_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    # category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     amount = db.Column(db.Integer)
-    date = db.Column(db.Date)
+    date_donated = db.Column(db.DateTime)
+    pay_method = db.Column(db.String)
+
+    donor = db.relationship("User", foreign_keys=[donor_id])
+    ngo = db.relationship("User", foreign_keys=[ngo_id])
+    donation_request = db.relationship("DonationRequest", back_populates="donations")
+    category = db.relationship("Category", back_populates="donations")
 
 class Category(db.Model, SerializerMixin):
     __tablename__ = 'categories'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)  # Changed from 'category' to 'name' for clarity
-    description = db.Column(db.String)
+    name = db.Column(db.String)
+    description = db.Column(db.Text)
+    img = db.Column(db.String)
+
+    users = db.relationship("User", back_populates="category")
+    donation_requests = db.relationship("DonationRequest", back_populates="category")
+    donations = db.relationship("Donation", back_populates="category")
 
 if __name__ == "__main__":
-    db.create_all()  # Ensure the database tables are created
+    db.create_all() 
