@@ -65,6 +65,9 @@ class SignupResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"message": "Error creating user"}, 500
+        
+        access_token = create_access_token(identity=new_user.id)
+        return {"user_id": new_user.id, "user_role": new_user.role, "access_token": access_token}, 201
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
