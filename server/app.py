@@ -13,6 +13,7 @@ from models import User, DonationRequest, Donation, Category
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'
+
 #aunthenticate a user
 
 class LoginResource(Resource):
@@ -31,6 +32,14 @@ class LoginResource(Resource):
             "user_id": user.id, 
             "user_role": user.role, 
             "access_token": access_token}, 200
+        
+
+class SignupResource(Resource):
+    def post(self):
+        data = request.json
+         # Validate required fields
+        if 'name' not in data or 'email' not in data or 'role' not in data or 'password' not in data:
+             return {"message": "Missing required fields"}, 400    
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
