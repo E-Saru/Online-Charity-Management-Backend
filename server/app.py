@@ -79,6 +79,9 @@ class CategoryListResource(Resource):
     def post(self):
         data = request.json
         user = User.query.get(data.get('user_id'))
+        
+        if not user:
+            return {'message': 'User not found'}, 401
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
