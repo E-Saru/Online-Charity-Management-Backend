@@ -42,6 +42,9 @@ class SignupResource(Resource):
              return {"message": "Missing required fields"}, 400   
          
         user = User.query.filter_by(email=data['email']).first() 
+        
+        if user:
+            return {"message": "User already exists"}, 400
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
