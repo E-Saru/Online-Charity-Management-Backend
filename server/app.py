@@ -39,7 +39,9 @@ class SignupResource(Resource):
         data = request.json
          # Validate required fields
         if 'name' not in data or 'email' not in data or 'role' not in data or 'password' not in data:
-             return {"message": "Missing required fields"}, 400    
+             return {"message": "Missing required fields"}, 400   
+         
+        user = User.query.filter_by(email=data['email']).first() 
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
