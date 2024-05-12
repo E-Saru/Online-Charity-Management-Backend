@@ -59,6 +59,12 @@ class SignupResource(Resource):
         )
         # Set password
         new_user.set_password(data['password'])
+        db.session.add(new_user)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return {"message": "Error creating user"}, 500
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
