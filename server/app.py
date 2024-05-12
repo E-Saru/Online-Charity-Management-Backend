@@ -20,6 +20,7 @@ class LoginResource(Resource):
         email = request.json.get('email', None)
         password = request.json.get('password', None)
 
+        user = User.query.filter_by(email=email).first()
 
 
 if __name__ == '__main__':
