@@ -76,6 +76,9 @@ class CategoryListResource(Resource):
         categories_response = [category for category in categories]
         return make_response(categories_response, 200) 
 
+    def post(self):
+        data = request.json
+        user = User.query.get(data.get('user_id'))
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
