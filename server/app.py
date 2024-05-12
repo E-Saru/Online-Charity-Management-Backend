@@ -122,6 +122,16 @@ class CategoryResource(Resource):
 
         db.session.commit()
         return {'message': 'Category updated successfully'}, 200  
+    
+    @jwt_required()
+    def delete(self, category_id):
+        category = Category.query.get(category_id)
+        if not category:
+            return {'message': 'Category not found'}, 404
+        
+        db.session.delete(category)
+        db.session.commit()
+        return {'message': 'Category deleted successfully'}, 200
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
