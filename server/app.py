@@ -74,14 +74,18 @@ class CategoryListResource(Resource):
     def get(self):
         categories = Category.query.all()
         categories_response = [category for category in categories]
-        return make_response(categories_response, 200) 
-
+        return make_response(categories_response, 200)
+     
+    @jwt_required()
     def post(self):
         data = request.json
         user = User.query.get(data.get('user_id'))
         
         if not user:
             return {'message': 'User not found'}, 401
+        
+        if user.role != 'admin':
+            return {'message': 'User is not an admin'}, 401
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
