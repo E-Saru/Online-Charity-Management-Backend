@@ -24,6 +24,13 @@ class LoginResource(Resource):
 
         if not user or not user.check_password(password):
             return {"message": "Invalid email or password. Please check your credentials."}, 401
+        
+        access_token = create_access_token(identity=user.id)
+        return {
+            "message": "User login success",
+            "user_id": user.id, 
+            "user_role": user.role, 
+            "access_token": access_token}, 200
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
