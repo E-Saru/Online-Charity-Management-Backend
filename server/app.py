@@ -22,6 +22,8 @@ class LoginResource(Resource):
 
         user = User.query.filter_by(email=email).first()
 
+        if not user or not user.check_password(password):
+            return {"message": "Invalid email or password. Please check your credentials."}, 401
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
