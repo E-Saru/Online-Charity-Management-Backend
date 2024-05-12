@@ -71,6 +71,7 @@ class SignupResource(Resource):
 
 # get all categories
 class CategoryListResource(Resource):
+    @jwt_required()
     def get(self):
         categories = Category.query.all()
         categories_response = [category for category in categories]
@@ -86,6 +87,10 @@ class CategoryListResource(Resource):
         
         if user.role != 'admin':
             return {'message': 'User is not an admin'}, 401
+        
+        category = Category(name=data.get('name'), 
+                            description=data('description'), 
+                            img=data.get('img', ''))
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
