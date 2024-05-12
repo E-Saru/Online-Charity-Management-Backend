@@ -95,6 +95,14 @@ class CategoryListResource(Resource):
         db.session.add(category)
         db.session.commit()
         return {'message': 'Category created successfully'}, 201
+    
+
+class CategoryResource(Resource):
+    def get(self, category_id):
+        category = Category.query.get(category_id)
+        if not category:
+            return {'message': 'Category not found'}, 404
+        return category, 200    
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
