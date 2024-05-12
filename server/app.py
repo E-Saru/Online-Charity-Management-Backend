@@ -45,6 +45,20 @@ class SignupResource(Resource):
         
         if user:
             return {"message": "User already exists"}, 400
+        
+        # Create a new user instance
+        new_user = User(
+            name=data.get('name'),
+            email=data.get('email'),
+            role=data.get('role'),
+            location=data.get('location'),
+            description=data.get('description'),
+            category_id=data.get('category_id'),
+            img=data.get('img'),
+            contacts=data.get('contacts')
+        )
+        # Set password
+        new_user.set_password(data['password'])
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
