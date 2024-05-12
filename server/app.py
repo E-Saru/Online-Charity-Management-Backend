@@ -69,6 +69,12 @@ class SignupResource(Resource):
         access_token = create_access_token(identity=new_user.id)
         return {"user_id": new_user.id, "user_role": new_user.role, "access_token": access_token}, 201
 
+# get all categories
+class CategoryListResource(Resource):
+    def get(self):
+        categories = Category.query.all()
+        categories_response = [category for category in categories]
+        return make_response(categories_response, 200) 
 
 
 api.add_resource(LoginResource, '/login')
