@@ -91,6 +91,10 @@ class CategoryListResource(Resource):
         category = Category(name=data.get('name'), 
                             description=data('description'), 
                             img=data.get('img', ''))
+        
+        db.session.add(category)
+        db.session.commit()
+        return {'message': 'Category created successfully'}, 201
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
