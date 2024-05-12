@@ -69,6 +69,11 @@ class SignupResource(Resource):
         access_token = create_access_token(identity=new_user.id)
         return {"user_id": new_user.id, "user_role": new_user.role, "access_token": access_token}, 201
 
+
+
+api.add_resource(LoginResource, '/login')
+api.add_resource(SignupResource, '/signup')
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
     
