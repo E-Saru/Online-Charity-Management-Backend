@@ -98,11 +98,30 @@ class CategoryListResource(Resource):
     
 
 class CategoryResource(Resource):
+    @jwt_required()
     def get(self, category_id):
         category = Category.query.get(category_id)
         if not category:
             return {'message': 'Category not found'}, 404
-        return category, 200    
+        return category, 200  
+    
+    @jwt_required()
+    def patch(self, category_id):
+        category = Category.query.get(category_id)
+        if not category:
+            return {'message': 'Category not found'}, 404
+        
+        data = request.json
+
+        if 'name' in data:
+            category.name = data.get('name')
+        if 'description' in data:
+            category.description = data.get('description')
+        if 'img' in data:
+            category.img = data.get('img')
+
+        db.session.commit()
+        return {'message': 'Category updated successfully'}, 200  
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
