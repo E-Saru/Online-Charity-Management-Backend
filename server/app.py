@@ -72,12 +72,32 @@ class SignupResource(Resource):
 # get all categories for the admin
 class CategoryListResource(Resource):
     @jwt_required()
+    # def get(self):
+    #     categories = Category.query.all()
+    #     categories_response = [category for category in categories]
+    #     return make_response(categories_response, 200)
     def get(self):
         categories = Category.query.all()
+
+        
+        category_data = []
+        for category in categories:
+            category_info = {
+                "id": category.id,
+                "name": category.name,
+                "description": category.description,
+                "img": category.img
+            }
+            category_data.append(category_info)
+        return jsonify(category_data)
+        
+        
+
         categories_response = [category for category in categories]
         return make_response(categories_response, 200)
     
     # admin should be able to add categories
+    
     @jwt_required()
     def post(self):
         data = request.json
@@ -90,7 +110,7 @@ class CategoryListResource(Resource):
             return {'message': 'User is not an admin'}, 401
         
         category = Category(name=data.get('name'), 
-                            description=data('description'), 
+                            description=data.get('description'), 
                             img=data.get('img', ''))
         
         db.session.add(category)
@@ -100,15 +120,22 @@ class CategoryListResource(Resource):
 
 class CategoryResource(Resource):
     @jwt_required()
-    # def get(self, category_id):
-    #     category = Category.query.get(category_id)
-    #     if not category:
-    #         return {'message': 'Category not found'}, 404
-    #     return category, 200 
-    def get(self):
-        categories = Category.query.all()
-        categories_response = [category.serialize() for category in categories]
-        return make_response(jsonify(categories_response), 200)
+    def get(self, category_id):
+        category = Category.query.get(category_id)
+        if category:
+            category_data = {
+                "id": category.id,
+                "name": category.name,
+                "description": category.description,
+                "img": category.img
+            }
+            return jsonify(category_data)
+        else:
+            return ({'error': 'Category not found'}), 404 
+    # def get(self):
+    #     categories = Category.query.all()
+    #     categories_response = [category.serialize() for category in categories]
+    #     return make_response(jsonify(categories_response), 200)
     
     @jwt_required()
     def patch(self, category_id):
@@ -131,12 +158,18 @@ class CategoryResource(Resource):
     @jwt_required()
     def delete(self, category_id):
         category = Category.query.get(category_id)
-        data = request.json
-        user = User.query.get(data.get('user_id'))
         if not category:
             return {'message': 'Category not found'}, 404
+        
+        data = request.json
+        user = User.query.get(data.get('user_id'))
+        
+        if not user:
+            return {'message': 'User not found'}, 401
+        
         if user.role != 'admin':
             return {'message': 'User is not an admin'}, 401
+        
         db.session.delete(category)
         db.session.commit()
         return {'message': 'Category deleted successfully'}, 200
