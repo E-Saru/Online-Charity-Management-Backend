@@ -132,6 +132,7 @@ api.add_resource(SignupResource, '/signup')
 api.add_resource(CategoryListResource, '/categories')
 api.add_resource(CategoryResource, '/categories/<int:category_id>')
 
+# This endpoint gets all the donation requests based on the auth of the user
 @app.route('/donation-requests', methods=['GET'])
 @jwt_required()
 def get_donation_requests():
@@ -175,6 +176,41 @@ def get_donation_requests():
     
     return jsonify(donation_requests_list), 200
 
+#This endpoint gets all the donations made, shows the admin
+@app.route('/admin/donations', methods=['GET'])
+@jwt_required()
+def get_all_donations():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    if user.role != 'admin':
+        return jsonify({'message': 'Unauthorized access'}), 403
+    
+    donations = Donation.query.all()
+    donations_list = []
+
+    for donation in donations:
+        ngo = User.query.get(donation.ngo_id)
+        donor = User.query.get(donation.donor_id)
+        category = Category.query.get(donation.category_id)
+
+        donations_list.append({
+            'id': donation.id,
+            'ngo_id': donation.ngo_id,
+            'ngo_name': ngo.name if ngo else None,
+            'donor_id': donation.donor_id,
+            'donor_name': donor.name if donor else None,
+            'category_id': donation.category_id,
+            'category_name': category.name if category else None,
+            'amount': donation.amount,
+            'date_donated': donation.date_donated.strftime('%Y-%m-%d'),
+            'pay_method': donation.pay_method
+        })
+    
+    return jsonify(donations_list), 200
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
