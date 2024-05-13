@@ -126,15 +126,20 @@ class CategoryResource(Resource):
     @jwt_required()
     def delete(self, category_id):
         category = Category.query.get(category_id)
+        data = request.json
+        user = User.query.get(data.get('user_id'))
         if not category:
             return {'message': 'Category not found'}, 404
-        
+        if user.role != 'admin':
+            return {'message': 'User is not an admin'}, 401
         db.session.delete(category)
         db.session.commit()
         return {'message': 'Category deleted successfully'}, 200
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
+api.add_resource(CategoryListResource, '/categories')
+api.add_resource(CategoryResource, '/categories/<int:category_id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
