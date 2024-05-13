@@ -127,13 +127,28 @@ class CategoryResource(Resource):
 
         db.session.commit()
         return {'message': 'Category updated successfully'}, 200  
+    
+    @jwt_required()
+    def delete(self, category_id):
+        category = Category.query.get(category_id)
+        data = request.json
+        user = User.query.get(data.get('user_id'))
+        if not category:
+            return {'message': 'Category not found'}, 404
+        if user.role != 'admin':
+            return {'message': 'User is not an admin'}, 401
+        db.session.delete(category)
+        db.session.commit()
+        return {'message': 'Category deleted successfully'}, 200
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
 api.add_resource(CategoryListResource, '/categories')
 api.add_resource(CategoryResource, '/categories/<int:category_id>')
 
+
 # This endpoint gets all the donation requests based on the auth of the user
+
 @app.route('/donation-requests', methods=['GET'])
 @jwt_required()
 def get_donation_requests():
@@ -215,6 +230,7 @@ def get_all_donations():
     
     return jsonify(donations_list), 200
 
+
 # This endpoint gets all donations made by a certain donor, shows the donor
 @app.route('/donor/donations', methods=['GET'])
 @jwt_required()
@@ -285,6 +301,7 @@ def get_ngo_donations():
         })
     
     return jsonify(donations_list), 200
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
