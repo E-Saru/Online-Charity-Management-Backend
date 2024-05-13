@@ -303,6 +303,38 @@ def get_ngo_donations():
     return jsonify(donations_list), 200
 
 
+# This endpoint gets the list of ngos, should be used by admin and probably the donors
+@app.route('/ngos', methods=['GET'])
+@jwt_required()
+def get_ngos():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    
+    if user.role not in ['admin', 'donor']:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    ngos = User.query.filter_by(role='ngo').all()
+    ngos_list = []
+
+    for ngo in ngos:
+        ngos_list.append({
+            'id': ngo.id,
+            'name': ngo.name,
+            'email': ngo.email,
+            'location': ngo.location,
+            'description': ngo.description,
+            'category_id': ngo.category_id,
+            'img': ngo.img,
+            'contacts': ngo.contacts
+        })
+    
+    return jsonify(ngos_list), 200
+
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
     
