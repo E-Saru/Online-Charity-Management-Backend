@@ -46,6 +46,24 @@ class User(db.Model, SerializerMixin):
     def __repr__(self):
         return f'<User {self.role} {self.email}>'
     
+# class DonationRequest(db.Model, SerializerMixin): 
+#     __tablename__ = 'donationrequest'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     ngo_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+#     admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+#     donor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+#     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+#     title = db.Column(db.String, nullable=False)
+#     reason = db.Column(db.Text, nullable=False)
+#     amount_requested = db.Column(db.Integer, nullable=False)
+#     balance = db.Column(db.Integer, default=amount_requested)  
+#     status = db.Column(db.String, nullable=False, default='pending')
+
+#     ngo = db.relationship("User", foreign_keys=[ngo_id])
+#     admin = db.relationship("User", foreign_keys=[admin_id])
+#     donor = db.relationship("User", foreign_keys=[donor_id])
+#     category = db.relationship("Category", back_populates="donation_requests")
 
 class DonationRequest(db.Model, SerializerMixin): 
     __tablename__ = 'donationrequest'
@@ -69,7 +87,22 @@ class DonationRequest(db.Model, SerializerMixin):
 #category = db.relationship("Category", back_populates="donation_requests")
     
 
+# class Donation(db.Model, SerializerMixin): 
+#     __tablename__ = 'donations'
 
+#     id = db.Column(db.Integer, primary_key=True)
+#     donor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+#     donation_request_id = db.Column(db.Integer, db.ForeignKey('donationrequest.id'))
+#     ngo_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+#     # category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+#     amount = db.Column(db.Integer)
+#     date_donated = db.Column(db.DateTime)
+#     pay_method = db.Column(db.String)
+
+#     donor = db.relationship("User", foreign_keys=[donor_id])
+#     ngo = db.relationship("User", foreign_keys=[ngo_id])
+#     donation_request = db.relationship("DonationRequest", back_populates="donations")
+#     category = db.relationship("Category", back_populates="donations")
 
 class Donation(db.Model, SerializerMixin): 
     __tablename__ = 'donations'
@@ -101,14 +134,6 @@ class Category(db.Model, SerializerMixin):
     users = db.relationship("User", back_populates="category")
     donation_requests = db.relationship("DonationRequest", back_populates="category")
     donations = db.relationship("Donation", back_populates="category")
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'img': self.img
-        }
 
 if __name__ == "__main__":
     db.create_all() 
