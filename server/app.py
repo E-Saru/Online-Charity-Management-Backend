@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from flask import request, jsonify, make_response
 from flask_restful import Api, Resource
-from flask_jwt_extended import jwt_required, create_access_token
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api  
 from models import User, DonationRequest, Donation, Category 
@@ -99,11 +99,15 @@ class CategoryListResource(Resource):
 
 class CategoryResource(Resource):
     @jwt_required()
-    def get(self, category_id):
-        category = Category.query.get(category_id)
-        if not category:
-            return {'message': 'Category not found'}, 404
-        return category, 200  
+    # def get(self, category_id):
+    #     category = Category.query.get(category_id)
+    #     if not category:
+    #         return {'message': 'Category not found'}, 404
+    #     return category, 200 
+    def get(self):
+        categories = Category.query.all()
+        categories_response = [category.serialize() for category in categories]
+        return make_response(jsonify(categories_response), 200)
     
     @jwt_required()
     def patch(self, category_id):
@@ -125,6 +129,52 @@ class CategoryResource(Resource):
 
 api.add_resource(LoginResource, '/login')
 api.add_resource(SignupResource, '/signup')
+api.add_resource(CategoryListResource, '/categories')
+api.add_resource(CategoryResource, '/categories/<int:category_id>')
+
+@app.route('/donation-requests', methods=['GET'])
+@jwt_required()
+def get_donation_requests():
+    current_user_id = get_jwt_identity()
+    
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    user_role = user.role
+    
+    if user_role not in ['admin', 'donor']:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    if user_role == 'admin':
+        donation_requests = DonationRequest.query.all()
+    else:  # donors
+        donation_requests = DonationRequest.query.filter_by(donor_id=user.id).all()
+    
+    donation_requests_list = []
+    for request in donation_requests:
+        category = Category.query.get(request.category_id)
+        ngo = User.query.get(request.ngo_id)
+        donor = User.query.get(request.donor_id)
+        
+        donation_requests_list.append({
+            'id': request.id,
+            'ngo_id': request.ngo_id,
+            'ngo_name': ngo.name if ngo else None,
+            'category_id': request.category_id,
+            'category_name': category.name if category else None,
+            'donor_id': request.donor_id,
+            'donor_name': donor.name if donor else None,
+            'title': request.title,
+            'reason': request.reason,
+            'amount_requested': request.amount_requested,
+            'balance': request.balance,
+            'status': request.status
+        })
+    
+    return jsonify(donation_requests_list), 200
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
