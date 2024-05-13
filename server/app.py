@@ -304,6 +304,7 @@ def get_ngo_donations():
 
 
 # This endpoint gets the list of ngos, should be used by admin and probably the donors
+
 @app.route('/ngos', methods=['GET'])
 @jwt_required()
 def get_ngos():
@@ -313,26 +314,57 @@ def get_ngos():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    
     if user.role not in ['admin', 'donor']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    ngos = User.query.filter_by(role='ngo').all()
+    ngos = User.query.filter(User.role == 'ngo').all()
     ngos_list = []
 
     for ngo in ngos:
+
+        category_name = Category.query.get(ngo.category_id).name if Category.query.get(ngo.category_id) else 'category not assigned'
+        
         ngos_list.append({
             'id': ngo.id,
             'name': ngo.name,
             'email': ngo.email,
             'location': ngo.location,
             'description': ngo.description,
-            'category_id': ngo.category_id,
+            'category_name': category_name,
             'img': ngo.img,
             'contacts': ngo.contacts
         })
     
     return jsonify(ngos_list), 200
+
+
+# This endpoint gets a list of all the donors, should only be accessible to the admin
+
+@app.route('/donors', methods=['GET'])
+@jwt_required()
+def get_donors():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    if user.role != 'admin':
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    donors = User.query.filter_by(role='donor').all()
+    donors_list = []
+
+    for donor in donors:
+        donors_list.append({
+            'name': donor.name,
+            'email': donor.email,
+            'location': donor.location,
+            'description': donor.description,
+            'contacts': donor.contacts
+        })
+    
+    return jsonify(donors_list), 200
 
 
 if __name__ == '__main__':
