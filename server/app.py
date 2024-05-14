@@ -156,20 +156,21 @@ class CategoryResource(Resource):
         return {'message': 'Category updated successfully'}, 200  
     
     @jwt_required()
+   # sorted the delete problem, the user id was not gooten from the token 
     def delete(self, category_id):
         category = Category.query.get(category_id)
         if not category:
             return {'message': 'Category not found'}, 404
-        
-        data = request.json
-        user = User.query.get(data.get('user_id'))
-        
+
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
         if not user:
             return {'message': 'User not found'}, 401
         
         if user.role != 'admin':
             return {'message': 'User is not an admin'}, 401
-        
+
         db.session.delete(category)
         db.session.commit()
         return {'message': 'Category deleted successfully'}, 200
@@ -228,6 +229,7 @@ def get_donation_requests():
     return jsonify(donation_requests_list), 200
 
 #This endpoint gets all the donations made, shows the admin
+
 @app.route('/admin/donations', methods=['GET'])
 @jwt_required()
 def get_all_donations():
@@ -265,6 +267,7 @@ def get_all_donations():
 
 
 # This endpoint gets all donations made by a certain donor, shows the donor
+
 @app.route('/donor/donations', methods=['GET'])
 @jwt_required()
 def get_donor_donations():
@@ -300,6 +303,7 @@ def get_donor_donations():
 
 
 # gets the donations received by a single ngo, shows the ngo
+
 @app.route('/ngo/donations', methods=['GET'])
 @jwt_required()
 def get_ngo_donations():
@@ -398,6 +402,43 @@ def get_donors():
         })
     
     return jsonify(donors_list), 200
+
+# Endpoint gets a single ngo, it should be used by the admin and donor pages
+
+@app.route('/ngos/<int:ngo_id>', methods=['GET'])
+@jwt_required()
+def get_ngo(ngo_id):
+    # Authenticate and authorize
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    if user.role not in ['admin', 'donor']:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    
+    ngo = User.query.filter_by(id=ngo_id, role='ngo').first()
+    if not ngo:
+        return jsonify({'message': 'NGO not found'}), 404
+
+    
+    category_name = Category.query.get(ngo.category_id).name if Category.query.get(ngo.category_id) else 'No category assigned'
+
+    
+    ngo_details = {
+        'id': ngo.id,
+        'name': ngo.name,
+        'email': ngo.email,
+        'location': ngo.location,
+        'description': ngo.description,
+        'category_name': category_name,
+        'img': ngo.img,
+        'contacts': ngo.contacts
+    }
+
+    return jsonify(ngo_details), 200
 
 
 if __name__ == '__main__':
