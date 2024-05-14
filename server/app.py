@@ -101,7 +101,8 @@ class CategoryListResource(Resource):
     @jwt_required()
     def post(self):
         data = request.json
-        user = User.query.get(data.get('user_id'))
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
         
         if not user:
             return {'message': 'User not found'}, 401
