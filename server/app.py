@@ -72,15 +72,10 @@ class SignupResource(Resource):
 # get all categories for the admin
 class CategoryListResource(Resource):
     @jwt_required()
-    # def get(self):
-    #     categories = Category.query.all()
-    #     categories_response = [category for category in categories]
-    #     return make_response(categories_response, 200)
     def get(self):
         categories = Category.query.all()
 
-        
-        category_data = []
+        categories_data = []
         for category in categories:
             category_info = {
                 "id": category.id,
@@ -88,16 +83,14 @@ class CategoryListResource(Resource):
                 "description": category.description,
                 "img": category.img
             }
-            category_data.append(category_info)
-        return jsonify(category_data)
+            categories_data.append(category_info)
+        return jsonify(categories_data)
         
         
 
-        categories_response = [category for category in categories]
-        return make_response(categories_response, 200)
+
     
     # admin should be able to add categories
-    
     @jwt_required()
     def post(self):
         data = request.json
@@ -133,11 +126,7 @@ class CategoryResource(Resource):
             return jsonify(category_data)
         else:
             return ({'error': 'Category not found'}), 404 
-    # def get(self):
-    #     categories = Category.query.all()
-    #     categories_response = [category.serialize() for category in categories]
-    #     return make_response(jsonify(categories_response), 200)
-    
+   
     @jwt_required()
     def patch(self, category_id):
         category = Category.query.get(category_id)
@@ -228,6 +217,45 @@ def get_donation_requests():
         })
     
     return jsonify(donation_requests_list), 200
+
+@app.route('/donation_requests', methods=['POST'])
+@jwt_required()
+def create_donation_request():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    data = request.json
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    if user.role != 'ngo':
+        return jsonify({'message': "Only NGOs can create donation requests"}), 403
+    
+     # Validate required fields
+    if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_id' not in data:
+        return jsonify({"message": "Missing required fields"}), 40
+
+    # Create a new donation request
+    new_donation_request = DonationRequest(
+        ngo_id=current_user_id,
+        title=data.get('title'),
+        category_id=data.get('category_id'),
+        reason=data.get('reason'),
+        amount_requested=data.get('amount_requested'),
+        balance = data.get('balance'),
+        
+    )
+
+    db.session.add(new_donation_request)
+
+    try:
+        
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error creating donation request"}), 500
+
+    return jsonify({"message": "Donation request created successfully"}), 201
 
 #This endpoint gets all the donations made, shows the admin
 
