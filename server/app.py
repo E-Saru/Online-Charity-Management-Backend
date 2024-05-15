@@ -218,6 +218,7 @@ def get_donation_requests():
     
     return jsonify(donation_requests_list), 200
 
+#Create donation request
 @app.route('/donation_requests', methods=['POST'])
 @jwt_required()
 def create_donation_request():
