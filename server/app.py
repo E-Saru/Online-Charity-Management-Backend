@@ -219,7 +219,7 @@ def get_donation_requests():
     return jsonify(donation_requests_list), 200
 
 #Create donation request
-@app.route('/donation_requests', methods=['POST'])
+@app.route('/donation/request', methods=['POST'])
 @jwt_required()
 def create_donation_request():
     current_user_id = get_jwt_identity()
@@ -231,21 +231,24 @@ def create_donation_request():
     
     if user.role != 'ngo':
         return jsonify({'message': "Only NGOs can create donation requests"}), 403
+    
+    
+    if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_name' not in data:
+        return jsonify({"message": "Missing required fields"}), 40
+    
+    # get the category input from the db
+    category = Category.query.filter_by(name=data.get('category_name')).first()
+    if not category:
+        return jsonify({'message': 'Category not found'}), 404
 
-     # Validate required fields
-    if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_id' not in data:
-        return jsonify({"message": "Missing required fields"}), 400
-
-
-    # Create a new donation request
+    # a new donation request
     new_donation_request = DonationRequest(
         ngo_id=current_user_id,
         title=data.get('title'),
-        category_id=data.get('category_id'),
+        category_id=category.id, 
         reason=data.get('reason'),
         amount_requested=data.get('amount_requested'),
-        balance = data.get('balance'),
-        
+        balance=data.get('amount_requested')  # Balance should be initialized with the amount
     )
 
     db.session.add(new_donation_request)
@@ -256,7 +259,7 @@ def create_donation_request():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating donation request"}), 500
-    # return a success message
+
     return jsonify({"message": "Donation request created successfully"}), 201
 
 #This endpoint gets all the donations made, shows the admin
