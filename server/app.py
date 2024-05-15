@@ -255,7 +255,7 @@ def create_donation_request():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating donation request"}), 500
-
+    # return a success message
     return jsonify({"message": "Donation request created successfully"}), 201
 
 #This endpoint gets all the donations made, shows the admin
