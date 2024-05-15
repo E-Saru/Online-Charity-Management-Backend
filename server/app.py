@@ -504,7 +504,8 @@ def update_ngo_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error updating profile: " + str(e)}), 500
-    
+
+# This endpoint enables the admin to chnage the status of the donation request   
 @app.route('/donation/requests_status/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_donation_request_status(id):
@@ -527,6 +528,31 @@ def update_donation_request_status(id):
     donation_request.status = new_status
     db.session.commit()
     return jsonify({'message': 'Donation request status updated successfully'}), 200
+
+# this endpoint gives a specific donor the related donation requests
+
+@app.route('/donation/requests/approved', methods=['GET'])
+@jwt_required()
+def get_approved_donation_requests():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    approved_requests = DonationRequest.query.filter_by(status='approved').all()
+    requests_data = [{
+        'id': req.id,
+        'title': req.title,
+        'reason': req.reason,
+        'amount_requested': req.amount_requested,
+        'ngo_id': req.ngo_id
+    } for req in approved_requests]
+
+    return jsonify(requests_data), 200
+
+
+
 
 
 if __name__ == '__main__':
