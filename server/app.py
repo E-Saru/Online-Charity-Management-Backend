@@ -231,10 +231,11 @@ def create_donation_request():
     
     if user.role != 'ngo':
         return jsonify({'message': "Only NGOs can create donation requests"}), 403
-    
+
      # Validate required fields
     if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_id' not in data:
-        return jsonify({"message": "Missing required fields"}), 40
+        return jsonify({"message": "Missing required fields"}), 400
+
 
     # Create a new donation request
     new_donation_request = DonationRequest(
