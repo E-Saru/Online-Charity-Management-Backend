@@ -470,6 +470,37 @@ def get_ngo(ngo_id):
 
     return jsonify(ngo_details), 200
 
+# this endpoint enables an ngo to update their details once they are logged in
+@app.route('/update/profile', methods=['PUT'])
+@jwt_required()
+def update_ngo_profile():
+    current_user_id = get_jwt_identity()
+    ngo = User.query.get(current_user_id)
+    
+    if not ngo:
+        return jsonify({'message': 'NGO not found'}), 404
+
+    if ngo.role != 'ngo':
+        return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
+
+    # comment
+    data = request.json
+    description = data.get('description')
+    img = data.get('img')
+
+
+    if description:
+        ngo.description = description
+    if img:
+        ngo.img = img
+
+    try:
+        db.session.commit()
+        return jsonify({"message": "Profile updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error updating profile: " + str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
