@@ -486,6 +486,7 @@ def update_ngo_profile():
     if ngo.role != 'ngo':
         return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
 
+    # comment
     data = request.json
     description = data.get('description')
     img = data.get('img')
