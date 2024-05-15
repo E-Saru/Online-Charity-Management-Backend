@@ -219,7 +219,7 @@ def get_donation_requests():
     return jsonify(donation_requests_list), 200
 
 # This endpoint enables a ngo to make a donation request
-
+# solving merge conflict
 @app.route('/donation/request', methods=['POST'])
 @jwt_required()
 def create_donation_request():
