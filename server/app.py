@@ -504,6 +504,29 @@ def update_ngo_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error updating profile: " + str(e)}), 500
+    
+@app.route('/donation/requests_status/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_donation_request_status(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user or user.role != 'admin':
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    data = request.json
+    new_status = data.get('status')
+
+    if new_status not in ['approved', 'declined']:
+        return jsonify({'message': 'Invalid status value'}), 400
+
+    donation_request = DonationRequest.query.get(id)
+    if not donation_request:
+        return jsonify({'message': 'Donation request not found'}), 404
+
+    donation_request.status = new_status
+    db.session.commit()
+    return jsonify({'message': 'Donation request status updated successfully'}), 200
 
 
 if __name__ == '__main__':
