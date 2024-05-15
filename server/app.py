@@ -219,7 +219,7 @@ def get_donation_requests():
     return jsonify(donation_requests_list), 200
 
 # This endpoint enables a ngo to make a donation request
-# solving merge conflict
+
 @app.route('/donation/request', methods=['POST'])
 @jwt_required()
 def create_donation_request():
@@ -235,7 +235,7 @@ def create_donation_request():
     
     
     if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_name' not in data:
-        return jsonify({"message": "Missing required fields"}), 40
+        return jsonify({"message": "Missing required fields"}), 400
     
     # get the category input from the db
     category = Category.query.filter_by(name=data.get('category_name')).first()
