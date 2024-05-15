@@ -551,8 +551,31 @@ def get_approved_donation_requests():
 
     return jsonify(requests_data), 200
 
+# this endpoint enables the donors make donations
+@app.route('/donation/make', methods=['POST'])
+@jwt_required()
+def make_donation():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Unauthorized access'}), 403
 
+    data = request.json
+    donation_request_id = data.get('donation_request_id')
+    amount = data.get('amount')
 
+    donation_request = DonationRequest.query.get(donation_request_id)
+    if donation_request.status != 'approved':
+        return jsonify({'message': 'This donation request is not approved'}), 400
+
+    
+    donation_request.balance -= amount
+    new_donation = Donation(donor_id=user_id, donation_request_id=donation_request_id, amount=amount)
+    db.session.add(new_donation)
+    db.session.commit()
+
+    return jsonify({'message': 'Donation made successfully'}), 200
 
 
 if __name__ == '__main__':
