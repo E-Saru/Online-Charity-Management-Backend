@@ -416,7 +416,7 @@ def get_donors():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.role != 'admin':
+    if user.role != 'admin' or user.role != 'ngo':
         return jsonify({'message': 'Unauthorized access'}), 403
 
     donors = User.query.filter_by(role='donor').all()
