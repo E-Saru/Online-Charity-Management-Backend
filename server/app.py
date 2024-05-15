@@ -218,9 +218,8 @@ def get_donation_requests():
     
     return jsonify(donation_requests_list), 200
 
-# This endpoint enables a ngo to make a donation request
-
-@app.route('/donation/request', methods=['POST'])
+#Create donation request
+@app.route('/donation_requests', methods=['POST'])
 @jwt_required()
 def create_donation_request():
     current_user_id = get_jwt_identity()
@@ -233,23 +232,19 @@ def create_donation_request():
     if user.role != 'ngo':
         return jsonify({'message': "Only NGOs can create donation requests"}), 403
     
-    
-    if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_name' not in data:
+     # Validate required fields
+    if 'title' not in data or 'reason' not in data or 'amount_requested' not in data or 'category_id' not in data:
         return jsonify({"message": "Missing required fields"}), 40
-    
-    # get the category input from the db
-    category = Category.query.filter_by(name=data.get('category_name')).first()
-    if not category:
-        return jsonify({'message': 'Category not found'}), 404
 
-    # a new donation request
+    # Create a new donation request
     new_donation_request = DonationRequest(
         ngo_id=current_user_id,
         title=data.get('title'),
-        category_id=category.id, 
+        category_id=data.get('category_id'),
         reason=data.get('reason'),
         amount_requested=data.get('amount_requested'),
-        balance=data.get('amount_requested')  # Balance should be initialized with the amount
+        balance = data.get('balance'),
+        
     )
 
     db.session.add(new_donation_request)
@@ -260,7 +255,7 @@ def create_donation_request():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating donation request"}), 500
-
+    # return a success message
     return jsonify({"message": "Donation request created successfully"}), 201
 
 #This endpoint gets all the donations made, shows the admin
@@ -443,7 +438,7 @@ def get_donors():
 @app.route('/ngos/<int:ngo_id>', methods=['GET'])
 @jwt_required()
 def get_ngo(ngo_id):
-    # Authentication
+    # Authenticate and authorize
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
@@ -458,8 +453,10 @@ def get_ngo(ngo_id):
     if not ngo:
         return jsonify({'message': 'NGO not found'}), 404
 
+    
     category_name = Category.query.get(ngo.category_id).name if Category.query.get(ngo.category_id) else 'No category assigned'
 
+    
     ngo_details = {
         'id': ngo.id,
         'name': ngo.name,
@@ -472,36 +469,6 @@ def get_ngo(ngo_id):
     }
 
     return jsonify(ngo_details), 200
-
-# this endpoint enables an ngo to update their details once they are logged in
-@app.route('/update/profile', methods=['PUT'])
-@jwt_required()
-def update_ngo_profile():
-    current_user_id = get_jwt_identity()
-    ngo = User.query.get(current_user_id)
-    
-    if not ngo:
-        return jsonify({'message': 'NGO not found'}), 404
-
-    if ngo.role != 'ngo':
-        return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
-
-    data = request.json
-    description = data.get('description')
-    img = data.get('img')
-
-
-    if description:
-        ngo.description = description
-    if img:
-        ngo.img = img
-
-    try:
-        db.session.commit()
-        return jsonify({"message": "Profile updated successfully"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Error updating profile: " + str(e)}), 500
 
 
 if __name__ == '__main__':
