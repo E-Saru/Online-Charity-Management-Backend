@@ -218,7 +218,8 @@ def get_donation_requests():
     
     return jsonify(donation_requests_list), 200
 
-# This endpoint enables a donor to make a donation request
+# This endpoint enables a ngo to make a donation request
+
 @app.route('/donation/request', methods=['POST'])
 @jwt_required()
 def create_donation_request():
@@ -442,7 +443,7 @@ def get_donors():
 @app.route('/ngos/<int:ngo_id>', methods=['GET'])
 @jwt_required()
 def get_ngo(ngo_id):
-    # Authenticate and authorize
+    # Authentication
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
@@ -457,10 +458,8 @@ def get_ngo(ngo_id):
     if not ngo:
         return jsonify({'message': 'NGO not found'}), 404
 
-    
     category_name = Category.query.get(ngo.category_id).name if Category.query.get(ngo.category_id) else 'No category assigned'
 
-    
     ngo_details = {
         'id': ngo.id,
         'name': ngo.name,
@@ -473,6 +472,36 @@ def get_ngo(ngo_id):
     }
 
     return jsonify(ngo_details), 200
+
+# this endpoint enables an ngo to update their details once they are logged in
+@app.route('/update/profile', methods=['PUT'])
+@jwt_required()
+def update_ngo_profile():
+    current_user_id = get_jwt_identity()
+    ngo = User.query.get(current_user_id)
+    
+    if not ngo:
+        return jsonify({'message': 'NGO not found'}), 404
+
+    if ngo.role != 'ngo':
+        return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
+
+    data = request.json
+    description = data.get('description')
+    img = data.get('img')
+
+
+    if description:
+        ngo.description = description
+    if img:
+        ngo.img = img
+
+    try:
+        db.session.commit()
+        return jsonify({"message": "Profile updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error updating profile: " + str(e)}), 500
 
 
 if __name__ == '__main__':
