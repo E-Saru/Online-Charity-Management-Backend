@@ -102,6 +102,7 @@ class CategoryListResource(Resource):
 
     
     # admin should be able to add categories
+    # implemented cloudinary here
     @jwt_required()
     def post(self):
         current_user_id = get_jwt_identity()
@@ -155,24 +156,43 @@ class CategoryResource(Resource):
             return jsonify(category_data)
         else:
             return ({'error': 'Category not found'}), 404 
-   
+  
+   # implemented cloudinary
     @jwt_required()
     def patch(self, category_id):
         category = Category.query.get(category_id)
         if not category:
-            return {'message': 'Category not found'}, 404
+            return jsonify({'message': 'Category not found'}), 404
         
-        data = request.json
+        # Using request.form and request.files for data and file handling
+        name = request.form.get('name')
+        description = request.form.get('description')
+        image_files = request.files.getlist('images')  #uploaded images
 
-        if 'name' in data:
-            category.name = data.get('name')
-        if 'description' in data:
-            category.description = data.get('description')
-        if 'img' in data:
-            category.img = data.get('img')
-
-        db.session.commit()
-        return {'message': 'Category updated successfully'}, 200  
+        # change the names
+        if name:
+            category.name = name
+        if description:
+            category.description = description
+        
+        # upload the images
+        if image_files:
+            image_urls = []
+            for image in image_files[:3]:  # select only 3 images
+                try:
+                    response = upload(image)
+                    image_urls.append(response.get('url'))
+                except Exception as e:
+                    db.session.rollback()
+                    return jsonify({'message': f'Failed to upload image: {str(e)}'}), 500
+            category.img = ','.join(image_urls)
+        
+        try:
+            db.session.commit()
+            return jsonify({'message': 'Category updated successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': f'Error updating category: {str(e)}'}), 500
     
     @jwt_required()
    # sorted the delete problem, the user id was not gooten from the token 
@@ -504,6 +524,7 @@ def get_ngo(ngo_id):
     return jsonify(ngo_details), 200
 
 # this endpoint enables an ngo to update their details once they are logged in
+# implemented cloudinary here
 @app.route('/update/profile', methods=['PUT'])
 @jwt_required()
 def update_ngo_profile():
