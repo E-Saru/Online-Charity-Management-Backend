@@ -7,8 +7,17 @@ from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api  
+import cloudinary
 from models import User, DonationRequest, Donation, Category 
+from cloudinary.uploader import upload
 
+
+          
+cloudinary.config( 
+  cloud_name = "dr2jfs28z", 
+  api_key = "439529234124963", 
+  api_secret = "0AU2lcNuml4oCF9K6VFmrBnmtxQ" 
+)
 
 @app.route('/')
 def index():
@@ -93,24 +102,33 @@ class CategoryListResource(Resource):
     # admin should be able to add categories
     @jwt_required()
     def post(self):
-        data = request.json
+        # data = request.json
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
         
         if not user:
-            return {'message': 'User not found'}, 401
+            return jsonify({'message': 'User not found'}), 401
         
         if user.role != 'admin':
-            return {'message': 'User is not an admin'}, 401
+            return jsonify({'message': 'User is not an admin'}), 401
         
-        category = Category(name=data.get('name'), 
-                            description=data.get('description'), 
-                            img=data.get('img', ''))
+        data = request.json
+        name = data.get('name')
+        description = data.get('description')
+        image_files = data.get('images', [])  # file paths
         
+        image_urls = []
+        for image_file in image_files[:3]:  # get only 3 images, the first 3
+            response = upload(image_file)
+            image_urls.append(response['url'])
+        
+        image_urls_string = ','.join(image_urls)  # store as csvs
+        
+        category = Category(name=name, description=description, img=image_urls_string)
         db.session.add(category)
         db.session.commit()
-        return {'message': 'Category created successfully'}, 201
-    
+        
+        return jsonify({'message': 'Category created successfully'}), 201
 
 class CategoryResource(Resource):
     @jwt_required()
@@ -483,21 +501,20 @@ def update_ngo_profile():
     
     if not ngo:
         return jsonify({'message': 'NGO not found'}), 404
-
     if ngo.role != 'ngo':
         return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
-
-    # comment
+    
     data = request.json
     description = data.get('description')
-    img = data.get('img')
-
-
+    image_files = data.get('images', [])
+    
     if description:
         ngo.description = description
-    if img:
-        ngo.img = img
-
+    
+    if image_files:
+        image_urls = [upload(image)['url'] for image in image_files[:3]]  
+        ngo.img = ','.join(image_urls)
+    
     try:
         db.session.commit()
         return jsonify({"message": "Profile updated successfully"}), 200
@@ -552,7 +569,7 @@ def get_approved_donation_requests():
     return jsonify(requests_data), 200
 
 # this endpoint enables the donors make donations
-@app.route('/donation/make', methods=['POST'])
+@app.route('/make/donation', methods=['POST'])
 @jwt_required()
 def make_donation():
     user_id = get_jwt_identity()
