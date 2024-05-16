@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
@@ -110,24 +110,25 @@ class CategoryListResource(Resource):
 
         if not user:
             return jsonify({'message': 'User not found'}), 401
-                
+                    
         if user.role != 'admin':
             return jsonify({'message': 'User is not an admin'}), 401
 
         name = request.form.get('name')
         description = request.form.get('description')
-        image_files = request.files.getlist('images') 
+        image_files = request.files.getlist('images')
 
         if not name or not description:
             return jsonify({'message': 'Missing required fields'}), 400
 
         image_urls = []
-        for image in image_files[:3]:  
-            if image:  
+        for image in image_files[:3]:  # select the first 3 images
+            if image:  # Check if the image exists
                 try:
                     response = upload(image)
                     image_urls.append(response.get('url'))
                 except Exception as e:
+                    db.session.rollback()  # Roll back in case of an error
                     return jsonify({'message': f'Failed to upload image: {str(e)}'}), 500
 
         image_urls_string = ','.join(image_urls)
@@ -136,10 +137,16 @@ class CategoryListResource(Resource):
             category = Category(name=name, description=description, img=image_urls_string)
             db.session.add(category)
             db.session.commit()
-            return jsonify({'message': 'Category created successfully'}), 201
+            # Instead of returning a Response object, return a JSON response
+            return ({'message': 'Category created successfully'}), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': f'Error creating category: {str(e)}'}), 500
+        
+        # don't know what this does, but let it be
+        data = {'message': 'Category created successfully', 'data': some_data}
+        json_data = json.dumps(data)
+        return Response(json_data, mimetype='application/json'), 201
 
 
 class CategoryResource(Resource):
@@ -156,7 +163,6 @@ class CategoryResource(Resource):
             return jsonify(category_data)
         else:
             return ({'error': 'Category not found'}), 404 
-  
    # implemented cloudinary
     @jwt_required()
     def patch(self, category_id):
