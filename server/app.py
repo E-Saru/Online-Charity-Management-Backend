@@ -10,6 +10,8 @@ from config import app, db, api
 import cloudinary
 from models import User, DonationRequest, Donation, Category 
 from cloudinary.uploader import upload
+from werkzeug.utils import secure_filename
+
 
 
           
@@ -102,33 +104,42 @@ class CategoryListResource(Resource):
     # admin should be able to add categories
     @jwt_required()
     def post(self):
-        # data = request.json
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
-        
+
         if not user:
             return jsonify({'message': 'User not found'}), 401
-        
+                
         if user.role != 'admin':
             return jsonify({'message': 'User is not an admin'}), 401
-        
-        data = request.json
-        name = data.get('name')
-        description = data.get('description')
-        image_files = data.get('images', [])  # file paths
-        
+
+        name = request.form.get('name')
+        description = request.form.get('description')
+        image_files = request.files.getlist('images') 
+
+        if not name or not description:
+            return jsonify({'message': 'Missing required fields'}), 400
+
         image_urls = []
-        for image_file in image_files[:3]:  # get only 3 images, the first 3
-            response = upload(image_file)
-            image_urls.append(response['url'])
-        
-        image_urls_string = ','.join(image_urls)  # store as csvs
-        
-        category = Category(name=name, description=description, img=image_urls_string)
-        db.session.add(category)
-        db.session.commit()
-        
-        return jsonify({'message': 'Category created successfully'}), 201
+        for image in image_files[:3]:  
+            if image:  
+                try:
+                    response = upload(image)
+                    image_urls.append(response.get('url'))
+                except Exception as e:
+                    return jsonify({'message': f'Failed to upload image: {str(e)}'}), 500
+
+        image_urls_string = ','.join(image_urls)
+
+        try:
+            category = Category(name=name, description=description, img=image_urls_string)
+            db.session.add(category)
+            db.session.commit()
+            return jsonify({'message': 'Category created successfully'}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': f'Error creating category: {str(e)}'}), 500
+
 
 class CategoryResource(Resource):
     @jwt_required()
@@ -498,23 +509,24 @@ def get_ngo(ngo_id):
 def update_ngo_profile():
     current_user_id = get_jwt_identity()
     ngo = User.query.get(current_user_id)
-    
+
     if not ngo:
         return jsonify({'message': 'NGO not found'}), 404
     if ngo.role != 'ngo':
         return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
-    
-    data = request.json
-    description = data.get('description')
-    image_files = data.get('images', [])
-    
+
+    description = request.form.get('description')
     if description:
         ngo.description = description
-    
+
+    image_files = request.files.getlist('images')  #uploaded files
     if image_files:
-        image_urls = [upload(image)['url'] for image in image_files[:3]]  
+        image_urls = []
+        for image in image_files[:3]:  # take only the first three images
+            response = upload(image)
+            image_urls.append(response.get('url'))
         ngo.img = ','.join(image_urls)
-    
+
     try:
         db.session.commit()
         return jsonify({"message": "Profile updated successfully"}), 200
