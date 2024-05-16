@@ -20,7 +20,8 @@ with app.app_context():
     def add_users():
         users = [
             {"name": "John Doe", "email": "john@example.com", "password": "password123", "role": "admin", "location": "Nairobi", "description": "System administrator", "img": "john.jpg", "contacts": 123456},
-            {"name": "Jane Doe", "email": "jane@example.com", "password": "password123", "role": "ngo", "location": "Kisumu", "description": "Runs an NGO focused on education", "category_id": 1, "img": "jane.jpg", "contacts": 654321}
+            {"name": "Jane Doe", "email": "jane@example.com", "password": "password123", "role": "ngo", "location": "Kisumu", "description": "Runs an NGO focused on education", "category_id": 1, "img": "jane.jpg", "contacts": 654321},
+            {"name": "Mary Katey ", "email": "mary@example.com", "password": "password123", "role": "donor", "location": "Nakuru", "description": "Committed to Empowerment", "contacts": 6546321}
         ]
         for user in users:
         

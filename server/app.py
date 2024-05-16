@@ -2,13 +2,24 @@
 
 import os
 from datetime import datetime
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api  
+import cloudinary
 from models import User, DonationRequest, Donation, Category 
+from cloudinary.uploader import upload
+from werkzeug.utils import secure_filename
 
+
+
+          
+cloudinary.config( 
+  cloud_name = "dr2jfs28z", 
+  api_key = "439529234124963", 
+  api_secret = "0AU2lcNuml4oCF9K6VFmrBnmtxQ" 
+)
 
 @app.route('/')
 def index():
@@ -91,26 +102,52 @@ class CategoryListResource(Resource):
 
     
     # admin should be able to add categories
+    # implemented cloudinary here
     @jwt_required()
     def post(self):
-        data = request.json
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
-        
+
         if not user:
-            return {'message': 'User not found'}, 401
-        
+            return jsonify({'message': 'User not found'}), 401
+                    
         if user.role != 'admin':
-            return {'message': 'User is not an admin'}, 401
+            return jsonify({'message': 'User is not an admin'}), 401
+
+        name = request.form.get('name')
+        description = request.form.get('description')
+        image_files = request.files.getlist('images')
+
+        if not name or not description:
+            return jsonify({'message': 'Missing required fields'}), 400
+
+        image_urls = []
+        for image in image_files[:3]:  # select the first 3 images
+            if image:  # Check if the image exists
+                try:
+                    response = upload(image)
+                    image_urls.append(response.get('url'))
+                except Exception as e:
+                    db.session.rollback()  # Roll back in case of an error
+                    return jsonify({'message': f'Failed to upload image: {str(e)}'}), 500
+
+        image_urls_string = ','.join(image_urls)
+
+        try:
+            category = Category(name=name, description=description, img=image_urls_string)
+            db.session.add(category)
+            db.session.commit()
+            # Instead of returning a Response object, return a JSON response
+            return ({'message': 'Category created successfully'}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': f'Error creating category: {str(e)}'}), 500
         
-        category = Category(name=data.get('name'), 
-                            description=data.get('description'), 
-                            img=data.get('img', ''))
-        
-        db.session.add(category)
-        db.session.commit()
-        return {'message': 'Category created successfully'}, 201
-    
+        # don't know what this does, but let it be
+        data = {'message': 'Category created successfully', 'data': some_data}
+        json_data = json.dumps(data)
+        return Response(json_data, mimetype='application/json'), 201
+
 
 class CategoryResource(Resource):
     @jwt_required()
@@ -126,24 +163,42 @@ class CategoryResource(Resource):
             return jsonify(category_data)
         else:
             return ({'error': 'Category not found'}), 404 
-   
+   # implemented cloudinary
     @jwt_required()
     def patch(self, category_id):
         category = Category.query.get(category_id)
         if not category:
-            return {'message': 'Category not found'}, 404
+            return jsonify({'message': 'Category not found'}), 404
         
-        data = request.json
+        # Using request.form and request.files for data and file handling
+        name = request.form.get('name')
+        description = request.form.get('description')
+        image_files = request.files.getlist('images')  #uploaded images
 
-        if 'name' in data:
-            category.name = data.get('name')
-        if 'description' in data:
-            category.description = data.get('description')
-        if 'img' in data:
-            category.img = data.get('img')
-
-        db.session.commit()
-        return {'message': 'Category updated successfully'}, 200  
+        # change the names
+        if name:
+            category.name = name
+        if description:
+            category.description = description
+        
+        # upload the images
+        if image_files:
+            image_urls = []
+            for image in image_files[:3]:  # select only 3 images
+                try:
+                    response = upload(image)
+                    image_urls.append(response.get('url'))
+                except Exception as e:
+                    db.session.rollback()
+                    return jsonify({'message': f'Failed to upload image: {str(e)}'}), 500
+            category.img = ','.join(image_urls)
+        
+        try:
+            db.session.commit()
+            return jsonify({'message': 'Category updated successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': f'Error updating category: {str(e)}'}), 500
     
     @jwt_required()
    # sorted the delete problem, the user id was not gooten from the token 
@@ -420,7 +475,7 @@ def get_donors():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.role != 'admin' or user.role != 'ngo':
+    if user.role not in ['admin', 'ngo']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
     donors = User.query.filter_by(role='donor').all()
@@ -475,28 +530,29 @@ def get_ngo(ngo_id):
     return jsonify(ngo_details), 200
 
 # this endpoint enables an ngo to update their details once they are logged in
+# implemented cloudinary here
 @app.route('/update/profile', methods=['PUT'])
 @jwt_required()
 def update_ngo_profile():
     current_user_id = get_jwt_identity()
     ngo = User.query.get(current_user_id)
-    
+
     if not ngo:
         return jsonify({'message': 'NGO not found'}), 404
-
     if ngo.role != 'ngo':
         return jsonify({'message': 'Unauthorized access. Only NGOs can update their profile.'}), 403
 
-    # comment
-    data = request.json
-    description = data.get('description')
-    img = data.get('img')
-
-
+    description = request.form.get('description')
     if description:
         ngo.description = description
-    if img:
-        ngo.img = img
+
+    image_files = request.files.getlist('images')  #uploaded files
+    if image_files:
+        image_urls = []
+        for image in image_files[:3]:  # take only the first three images
+            response = upload(image)
+            image_urls.append(response.get('url'))
+        ngo.img = ','.join(image_urls)
 
     try:
         db.session.commit()
@@ -552,7 +608,7 @@ def get_approved_donation_requests():
     return jsonify(requests_data), 200
 
 # this endpoint enables the donors make donations
-@app.route('/donation/make', methods=['POST'])
+@app.route('/make/donation', methods=['POST'])
 @jwt_required()
 def make_donation():
     user_id = get_jwt_identity()
