@@ -665,3 +665,11 @@ def get_donation_requests_by_category_name(category_name):
     } for req in donation_requests]
 
     return jsonify(donation_requests_data), 200
+
+# This endpoint just gets a list of categories for the dropdown
+@app.route('/list/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()  
+    category_names = [category.name for category in categories] 
+
+    return jsonify(category_names), 200
