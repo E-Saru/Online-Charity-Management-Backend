@@ -457,7 +457,7 @@ def get_ngos():
             'location': ngo.location,
             'description': ngo.description,
             'category_name': category_name,
-            'img': ngo.img,
+            # removed the image bit since it is a list
             'contacts': ngo.contacts
         })
     
@@ -493,7 +493,7 @@ def get_donors():
     return jsonify(donors_list), 200
 
 # Endpoint gets a single ngo, it should be used by the admin and donor pages
-
+# updated this so as to fetch the images correctly
 @app.route('/ngos/<int:ngo_id>', methods=['GET'])
 @jwt_required()
 def get_ngo(ngo_id):
@@ -515,7 +515,10 @@ def get_ngo(ngo_id):
     
     category_name = Category.query.get(ngo.category_id).name if Category.query.get(ngo.category_id) else 'No category assigned'
 
-    
+    #fetch the image links by looping through
+    images = ngo.img.split(',') if ngo.img else []
+
+
     ngo_details = {
         'id': ngo.id,
         'name': ngo.name,
@@ -523,7 +526,7 @@ def get_ngo(ngo_id):
         'location': ngo.location,
         'description': ngo.description,
         'category_name': category_name,
-        'img': ngo.img,
+        'images': images,
         'contacts': ngo.contacts
     }
 
