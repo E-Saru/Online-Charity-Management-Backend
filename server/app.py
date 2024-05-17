@@ -633,7 +633,35 @@ def make_donation():
 
     return jsonify({'message': 'Donation made successfully'}), 200
 
+# This endpoint filters the donation requests by category name
+# should be used by the donor
+@app.route('/donation-requests/<string:category_name>', methods=['GET'])
+@jwt_required()
+def get_donation_requests_by_category_name(category_name):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
 
-if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+    if not current_user or current_user.role != 'donor':
+        return jsonify({'message': 'Access denied'}), 403
+
     
+    category = Category.query.filter(Category.name.ilike(f"%{category_name}%")).first()
+    if not category:
+        return jsonify({'message': 'Category not found'}), 404
+
+    
+    donation_requests = DonationRequest.query.filter_by(category_id=category.id).join(User, User.id == DonationRequest.ngo_id).all()
+
+
+    donation_requests_data = [{
+        'id': req.id,
+        'ngo_name': req.ngo.name,
+        'category_name': category.name,
+        'title': req.title,
+        'reason': req.reason,
+        'amount_requested': req.amount_requested,
+        'balance': req.balance,
+        'status': req.status
+    } for req in donation_requests]
+
+    return jsonify(donation_requests_data), 200
