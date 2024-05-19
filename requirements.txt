@@ -1,0 +1,12 @@
+Faker 
+Flask 
+Flask-Migrate 
+Flask-SQLAlchemy
+ipdb 
+pytest
+flask-restful
+sqlalchemy-serializer
+psycopg2-binary
+psycopg2
+gunicorn
+python-dotenv
