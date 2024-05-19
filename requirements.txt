@@ -11,3 +11,4 @@ psycopg2-binary
 psycopg2
 gunicorn
 python-dotenv
+flask_cors
