@@ -135,5 +135,6 @@ class Category(db.Model, SerializerMixin):
     donation_requests = db.relationship("DonationRequest", back_populates="category")
     donations = db.relationship("Donation", back_populates="category")
 
+
 if __name__ == "__main__":
     db.create_all() 
