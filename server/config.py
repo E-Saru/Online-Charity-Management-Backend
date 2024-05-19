@@ -24,7 +24,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 # app.config['PORT'] = 5555  # Default port
 app.config['JWT_SECRET_KEY'] ='63734b761f2cdcbb8d81471b'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=120)
 # Metadata for database schema conventions
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
