@@ -19,7 +19,7 @@ load_dotenv()
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # app.config['DEBUG'] = True  # Enable debug mode
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://online_charity_manager_user:edQrCNVH1c5p73bZZtRaZWEFBpKqe8kW@dpg-cp4tac0cmk4c73eouffg-a.oregon-postgres.render.com/online_charity_manager"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 # app.config['PORT'] = 5555  # Default port
