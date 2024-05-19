@@ -1,0 +1,17 @@
+Faker 
+Flask 
+Flask-Migrate 
+Flask-SQLAlchemy
+ipdb 
+pytest
+flask-restful
+sqlalchemy_serializer
+flask_jwt_extended
+psycopg2-binary
+psycopg2
+gunicorn
+python-dotenv
+flask_cors
+cloudinary
+datetime
+bcrypt
