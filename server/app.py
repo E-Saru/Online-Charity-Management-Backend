@@ -745,7 +745,7 @@ def get_donation_request(request_id):
     return jsonify(request_data), 200
 
 
-@app.route('update/donor/profile', methods=['PUT'])
+@app.route('/update/donor/profile', methods=['PUT'])
 @jwt_required()
 def update_donor_profile():
 
@@ -779,7 +779,7 @@ def update_donor_profile():
     
 
 # gets a single donor and returns all there necessary data relating to that donor
-@app.route('get/donors/<int:donor_id>', methods=['GET'])
+@app.route('/get/donors/<int:donor_id>', methods=['GET'])
 @jwt_required()
 def get_donor(donor_id):
     current_user_id = get_jwt_identity()
