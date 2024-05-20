@@ -260,7 +260,7 @@ def get_donation_requests():
         donation_requests_list.append({
             'id': request.id,
             'ngo_id': request.ngo_id,
-            'admin_id':request.admin.id,
+            'admin_id':request.admin_id,
             'admin_name':admin.name if admin else None,
             'ngo_name': ngo.name if ngo else None,
             'category_id': request.category_id,
@@ -599,16 +599,23 @@ def get_approved_donation_requests():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     
-    if not user or user.role != 'donor' and user.role != 'Donor':
+    if not user or user.role not in ['donor', 'Donor']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    approved_requests = DonationRequest.query.filter_by(status='approved').all()
+    # join all the related tables
+    approved_requests = DonationRequest.query.join(User, User.id == DonationRequest.ngo_id) \
+                                              .join(Category, Category.id == DonationRequest.category_id) \
+                                              .filter(DonationRequest.status == 'approved').all()
+
+    
     requests_data = [{
         'id': req.id,
         'title': req.title,
         'reason': req.reason,
         'amount_requested': req.amount_requested,
-        'ngo_id': req.ngo_id
+        'ngo_id': req.ngo_id,
+        'ngo_name': req.ngo.name if req.ngo else None,  
+        'category_name': req.category.name if req.category else None  
     } for req in approved_requests]
 
     return jsonify(requests_data), 200
