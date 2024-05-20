@@ -355,7 +355,7 @@ def get_all_donations():
             'category_id': donation.category_id,
             'category_name': category.name if category else None,
             'amount': donation.amount,
-            'date_donated': donation.date_donated.strftime('%Y-%m-%d'),
+            'date_donated': donation.date_donated.strftime('%Y-%m-%d') if donation.date_donated else None,
             'pay_method': donation.pay_method
         })
     
