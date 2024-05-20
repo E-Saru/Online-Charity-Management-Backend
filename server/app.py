@@ -4,13 +4,14 @@ import os
 from datetime import datetime
 from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api  
 import cloudinary
 from models import User, DonationRequest, Donation, Category 
 from cloudinary.uploader import upload
 from werkzeug.utils import secure_filename
+import redis
 
 
 
@@ -605,20 +606,20 @@ def get_approved_donation_requests():
     if not user or user.role not in ['donor', 'Donor']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    # join all the related tables
+    
     approved_requests = DonationRequest.query.join(User, User.id == DonationRequest.ngo_id) \
                                               .join(Category, Category.id == DonationRequest.category_id) \
                                               .filter(DonationRequest.status == 'approved').all()
 
-    
     requests_data = [{
         'id': req.id,
         'title': req.title,
         'reason': req.reason,
         'amount_requested': req.amount_requested,
+        'balance': req.balance,
         'ngo_id': req.ngo_id,
         'ngo_name': req.ngo.name if req.ngo else None,  
-        'category_name': req.category.name if req.category else None  
+        'category_name': req.category.name if req.category else None
     } for req in approved_requests]
 
     return jsonify(requests_data), 200
@@ -689,3 +690,18 @@ def get_categories():
     category_names = [category.name for category in categories] 
 
     return jsonify(category_names), 200
+
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt()['jti']  #ID for the current token
+    now_utc = datetime.datetime.now(datetime.timezone.utc)  # Current time
+    token_exp = datetime.datetime.fromtimestamp(get_jwt()['exp'], tz=datetime.timezone.utc)  #expiration time
+    remaining_seconds = (token_exp - now_utc).total_seconds()
+
+    
+    r.set(jti, "revoked", ex=remaining_seconds)
+
+    return jsonify({"msg": "Successfully logged out"}), 200
