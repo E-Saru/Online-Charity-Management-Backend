@@ -255,10 +255,13 @@ def get_donation_requests():
         category = Category.query.get(request.category_id)
         ngo = User.query.get(request.ngo_id)
         donor = User.query.get(request.donor_id)
+        admin=User.query.get(request.admin_id)
         
         donation_requests_list.append({
             'id': request.id,
             'ngo_id': request.ngo_id,
+            'admin_id':request.admin.id,
+            'admin_name':admin.name if admin else None,
             'ngo_name': ngo.name if ngo else None,
             'category_id': request.category_id,
             'category_name': category.name if category else None,
