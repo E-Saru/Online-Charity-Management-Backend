@@ -776,3 +776,31 @@ def update_donor_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': 'Failed to update profile: ' + str(e)}), 500
+    
+
+# gets a single donor and returns all there necessary data relating to that donor
+@app.route('get/donors/<int:donor_id>', methods=['GET'])
+@jwt_required()
+def get_donor(donor_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    
+    if current_user.role != 'donor' and current_user_id != donor_id:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    donor = User.query.filter_by(id=donor_id, role='donor').first()
+    if not donor:
+        return jsonify({'message': 'Donor not found'}), 404
+
+    
+    donor_details = {
+        'id': donor.id,
+        'name': donor.name,
+        'email': donor.email,
+        'location': donor.location,
+        'img': donor.img,
+        'contacts': donor.contacts
+    }
+
+    return jsonify(donor_details), 200
