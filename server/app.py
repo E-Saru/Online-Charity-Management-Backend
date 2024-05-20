@@ -596,7 +596,7 @@ def get_approved_donation_requests():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     
-    if not user or user.role != 'donor':
+    if not user or user.role != 'donor' and user.role != 'Donor':
         return jsonify({'message': 'Unauthorized access'}), 403
 
     approved_requests = DonationRequest.query.filter_by(status='approved').all()
