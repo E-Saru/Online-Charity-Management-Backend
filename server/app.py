@@ -743,3 +743,36 @@ def get_donation_request(request_id):
     }
 
     return jsonify(request_data), 200
+
+
+@app.route('update/donor/profile', methods=['PUT'])
+@jwt_required()
+def update_donor_profile():
+
+    user_id = get_jwt_identity()
+    donor = User.query.get(user_id)
+    
+    if not donor or donor.role != 'donor':
+        return jsonify({'message': 'Unauthorized access or user not found'}), 403
+
+    data = request.form 
+    try:
+        if 'location' in data:
+            donor.location = data['location']
+        if 'name' in data:
+            donor.name = data['name']
+
+        
+        image_file = request.files.get('image')
+        if image_file:
+            response = upload(image_file)
+            donor.img = response.get('url')
+
+        db.session.commit()
+        return jsonify({
+            'message': 'Profile updated successfully',
+            'img_url': donor.img  
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to update profile: ' + str(e)}), 500
