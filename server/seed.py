@@ -20,8 +20,8 @@ with app.app_context():
     def add_users():
         users = [
             {"name": "John Doe", "email": "john@example.com", "password": "password123", "role": "admin", "location": "Nairobi", "description": "System administrator", "img": "john.jpg", "contacts": 123456},
-            {"name": "Jane Doe", "email": "jane@example.com", "password": "password123", "role": "ngo", "location": "Kisumu", "description": "Runs an NGO focused on education", "category_id": 1, "img": "jane.jpg", "contacts": 654321},
-            {"name": "Mary Katey ", "email": "mary@example.com", "password": "password123", "role": "donor", "location": "Nakuru", "description": "Committed to Empowerment", "contacts": 6546321}
+            {"name": "Jane Doe", "email": "jane@example.com", "password": "password123", "role": "ngo", "location": "Kisumu", "description": "Runs an NGO focused on education", "category_id": 1, "img": "jane.jpg", "contacts": 654321}
+           
         ]
         for user in users:
         
@@ -36,7 +36,7 @@ with app.app_context():
 
     def add_donation_requests():
         donation_requests = [
-            {"ngo_id": 2, "admin_id": 1, "title": "School Supplies", "reason": "To buy books and uniforms", "amount_requested": 5000, "category_id": 1}
+            {"ngo_id": 2, "admin_id": 1, "donor_id": 3, "title": "School Supplies", "reason": "To buy books and uniforms", "amount_requested": 5000, "category_id": 1}
         ]
         for request in donation_requests:
             new_request = DonationRequest(**request)
