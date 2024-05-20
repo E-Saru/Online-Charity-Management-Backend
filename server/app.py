@@ -702,6 +702,8 @@ def get_categories():
 
     return jsonify(category_names), 200
 
+
+# this en
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 @app.route('/logout', methods=['POST'])
@@ -758,7 +760,7 @@ def update_donor_profile():
     data = request.form 
     try:
         if 'location' in data:
-            donor.location = data['location']
+            donor.contacts = data['contacts']
         if 'name' in data:
             donor.name = data['name']
 
@@ -804,3 +806,25 @@ def get_donor(donor_id):
     }
 
     return jsonify(donor_details), 200
+
+# this endpoint gets the name and email of the amdin
+# to be used by the admin
+@app.route('/admin/profile', methods=['GET'])
+@jwt_required()
+def get_admin_profile():
+    
+    current_user_id = get_jwt_identity()
+
+    
+    admin = User.query.filter_by(id=current_user_id, role='admin').first()
+    if not admin:
+        return jsonify({'message': 'Admin not found or not authorized'}), 404
+
+    
+    admin_details = {
+        'id': admin.id,
+        'name': admin.name,
+        'email': admin.email
+    }
+
+    return jsonify(admin_details), 200
