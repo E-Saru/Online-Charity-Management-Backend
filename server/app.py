@@ -716,3 +716,30 @@ def logout():
     r.set(jti, "revoked", ex=remaining_seconds)
 
     return jsonify({"msg": "Successfully logged out"}), 200
+
+# this endpoint gets all the details of a single donation request
+# should be accessible to all
+@app.route('/donation/requests/<int:request_id>', methods=['GET'])
+@jwt_required()
+def get_donation_request(request_id):
+    donation_request = DonationRequest.query.get(request_id)
+    
+    if not donation_request:
+        return jsonify({'message': 'Donation request not found'}), 404
+    
+    
+    ngo = User.query.get(donation_request.ngo_id)
+    category = Category.query.get(donation_request.category_id)
+
+    request_data = {
+        'id': donation_request.id,
+        'title': donation_request.title,
+        'reason': donation_request.reason,
+        'amount_requested': donation_request.amount_requested,
+        'balance': donation_request.balance,
+        'status': donation_request.status,
+        'ngo_name': ngo.name if ngo else None,
+        'category_name': category.name if category else None
+    }
+
+    return jsonify(request_data), 200
