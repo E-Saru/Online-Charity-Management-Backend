@@ -511,7 +511,7 @@ def get_ngo(ngo_id):
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.role not in ['admin', 'donor']:
+    if user.role not in ['admin', 'donor', 'ngo']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
     
@@ -643,8 +643,19 @@ def make_donation():
         return jsonify({'message': 'This donation request is not approved'}), 400
 
     
+    if amount > donation_request.balance:
+        return jsonify({'message': 'Amount is more than the balance'}), 400
+
     donation_request.balance -= amount
-    new_donation = Donation(donor_id=user_id, donation_request_id=donation_request_id, amount=amount)
+
+    
+    new_donation = Donation(
+        donor_id=user_id,
+        donation_request_id=donation_request_id,
+        amount=amount,
+        date_donated=datetime.now(),  
+        pay_method=data.get('pay_method')  
+    )
     db.session.add(new_donation)
     db.session.commit()
 
