@@ -791,27 +791,27 @@ def update_donor_profile():
     
 
 # gets a single donor and returns all there necessary data relating to that donor
-@app.route('/get/donors/<int:donor_id>', methods=['GET'])
+@app.route('/get/single/donor', methods=['GET'])
 @jwt_required()
-def get_donor(donor_id):
+def get_donor():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    
-    
-    if current_user.role != 'donor' and current_user_id != donor_id:
+
+
+    if current_user.role != 'donor':
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    donor = User.query.filter_by(id=donor_id, role='donor').first()
+    
+    donor = User.query.filter_by(id=current_user_id, role='donor').first()
     if not donor:
         return jsonify({'message': 'Donor not found'}), 404
 
-    
     donor_details = {
         'id': donor.id,
         'name': donor.name,
         'email': donor.email,
-        'location': donor.location,
-        'img': donor.img,
+        # 'location': donor.location,
+        'img': donor.img, 
         'contacts': donor.contacts
     }
 
