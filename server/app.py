@@ -376,7 +376,6 @@ def get_donor_donations():
     if user.role != 'donor':
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    
     donations = Donation.query.filter_by(donor_id=user.id).all()
     donations_list = []
 
@@ -384,16 +383,20 @@ def get_donor_donations():
         ngo = User.query.get(donation.ngo_id)
         category = Category.query.get(donation.category_id)
 
-        donations_list.append({
+        donation_data = {
             'id': donation.id,
             'ngo_id': donation.ngo_id,
             'ngo_name': ngo.name if ngo else None,
             'category_id': donation.category_id,
             'category_name': category.name if category else None,
             'amount': donation.amount,
-            'date_donated': donation.date_donated.strftime('%Y-%m-%d'),
             'pay_method': donation.pay_method
-        })
+        }
+
+        
+        donation_data['date_donated'] = donation.date_donated.strftime('%Y-%m-%d') if donation.date_donated else 'Not Available'
+
+        donations_list.append(donation_data)
     
     return jsonify(donations_list), 200
 
