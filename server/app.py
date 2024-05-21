@@ -641,24 +641,31 @@ def make_donation():
     donation_request_id = data.get('donation_request_id')
     amount = data.get('amount')
 
+    
     donation_request = DonationRequest.query.get(donation_request_id)
+    if not donation_request:
+        return jsonify({'message': 'Donation request not found'}), 404
+
     if donation_request.status != 'approved':
         return jsonify({'message': 'This donation request is not approved'}), 400
 
-    
     if amount > donation_request.balance:
-        return jsonify({'message': 'Amount is more than the balance'}), 400
+        return jsonify({'message': 'Amount exceeds available balance'}), 400
 
+    
     donation_request.balance -= amount
 
     
     new_donation = Donation(
         donor_id=user_id,
         donation_request_id=donation_request_id,
+        ngo_id=donation_request.ngo_id, 
+        category_id=donation_request.category_id, 
         amount=amount,
         date_donated=datetime.now(),  
-        pay_method=data.get('pay_method')  
+        pay_method=data.get('pay_method', 'default_method') 
     )
+
     db.session.add(new_donation)
     db.session.commit()
 
