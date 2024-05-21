@@ -838,3 +838,29 @@ def get_admin_profile():
     }
 
     return jsonify(admin_details), 200
+
+# this endpoint should get the ngo details
+# should be used for their profile page
+@app.route('/ngo/details', methods=['GET'])
+@jwt_required()
+def get_ngo_details():
+    current_user_id = get_jwt_identity()
+    ngo = User.query.filter_by(id=current_user_id, role='ngo').first()
+
+    if not ngo:
+        return jsonify({'message': 'NGO not found'}), 404
+
+    
+    images = ngo.img.split(',') if ngo.img else []
+
+    ngo_details = {
+        'id': ngo.id,
+        'name': ngo.name,
+        'email': ngo.email,
+        'location': ngo.location,
+        'description': ngo.description,
+        'images': images, 
+        'contacts': ngo.contacts
+    }
+
+    return jsonify(ngo_details), 200
