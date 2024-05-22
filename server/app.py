@@ -723,7 +723,7 @@ def logout():
         jti = get_jwt()['jti']  
         now_utc = datetime.now(timezone.utc)  
         token_exp = datetime.fromtimestamp(get_jwt()['exp'], tz=timezone.utc)  
-        remaining_seconds = (token_exp - now_utc).total_seconds()
+        remaining_seconds = int((token_exp - now_utc).total_seconds())
 
 
         
