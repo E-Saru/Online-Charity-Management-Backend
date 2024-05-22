@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
@@ -720,16 +720,11 @@ r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 @jwt_required()
 def logout():
     try:
-        jti = get_jwt()['jti'] 
-        now_utc = datetime.datetime.now(datetime.timezone.utc)  
-        token_exp = datetime.datetime.fromtimestamp(get_jwt()['exp'], tz=datetime.timezone.utc)  
+        jti = get_jwt()['jti']  
+        now_utc = datetime.now(timezone.utc)  
+        token_exp = datetime.fromtimestamp(get_jwt()['exp'], tz=timezone.utc)  
         remaining_seconds = (token_exp - now_utc).total_seconds()
 
-        
-        app.logger.debug(f"JWT ID (jti): {jti}")
-        app.logger.debug(f"Current time (UTC): {now_utc}")
-        app.logger.debug(f"Token expiration time (UTC): {token_exp}")
-        app.logger.debug(f"Remaining seconds until expiration: {remaining_seconds}")
 
         
         r.set(jti, "revoked", ex=remaining_seconds)
