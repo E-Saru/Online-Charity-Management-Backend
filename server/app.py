@@ -369,14 +369,14 @@ def get_all_donations():
 def get_donor_donations():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
-    
+
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
     if user.role != 'donor':
         return jsonify({'message': 'Unauthorized access'}), 403
 
-    donations = Donation.query.filter_by(donor_id=user.id).all()
+    donations = Donation.query.filter_by(donor_id=user.id).join(DonationRequest, Donation.donation_request_id == DonationRequest.id).all()
     donations_list = []
 
     for donation in donations:
@@ -385,19 +385,19 @@ def get_donor_donations():
 
         donation_data = {
             'id': donation.id,
+            'title': donation.donation_request.title,  
+            'reason': donation.donation_request.reason,  
             'ngo_id': donation.ngo_id,
             'ngo_name': ngo.name if ngo else None,
             'category_id': donation.category_id,
             'category_name': category.name if category else None,
             'amount': donation.amount,
-            'pay_method': donation.pay_method
+            'pay_method': donation.pay_method,
+            'date_donated': donation.date_donated.strftime('%Y-%m-%d') if donation.date_donated else 'Not Available'
         }
 
-        
-        donation_data['date_donated'] = donation.date_donated.strftime('%Y-%m-%d') if donation.date_donated else 'Not Available'
-
         donations_list.append(donation_data)
-    
+
     return jsonify(donations_list), 200
 
 
