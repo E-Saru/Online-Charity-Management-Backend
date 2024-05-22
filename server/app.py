@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
@@ -714,20 +714,22 @@ def get_categories():
 
 
 # this endpoint logs out the user
-r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+# r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+class RevokedToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(120), unique=True, nullable=False)
+    expiration = db.Column(db.DateTime, nullable=False)
 
 @app.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
     try:
-        jti = get_jwt()['jti']  
-        now_utc = datetime.now(timezone.utc)  
-        token_exp = datetime.fromtimestamp(get_jwt()['exp'], tz=timezone.utc)  
-        remaining_seconds = int((token_exp - now_utc).total_seconds())
-
-
-        
-        r.set(jti, "revoked", ex=remaining_seconds)
+        jti = get_jwt()['jti']
+        expiration = datetime.now() + timedelta(seconds=int(get_jwt()['exp'] - datetime.now().timestamp()))
+        revoked_token = RevokedToken(jti=jti, expiration=expiration)
+        db.session.add(revoked_token)
+        db.session.commit()
 
         return jsonify({"msg": "Successfully logged out"}), 200
     except Exception as e:
