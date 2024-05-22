@@ -713,21 +713,31 @@ def get_categories():
     return jsonify(category_names), 200
 
 
-# this en
+# this endpoint logs out the user
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 @app.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    jti = get_jwt()['jti']  #ID for the current token
-    now_utc = datetime.datetime.now(datetime.timezone.utc)  # Current time
-    token_exp = datetime.datetime.fromtimestamp(get_jwt()['exp'], tz=datetime.timezone.utc)  #expiration time
-    remaining_seconds = (token_exp - now_utc).total_seconds()
+    try:
+        jti = get_jwt()['jti'] 
+        now_utc = datetime.datetime.now(datetime.timezone.utc)  
+        token_exp = datetime.datetime.fromtimestamp(get_jwt()['exp'], tz=datetime.timezone.utc)  
+        remaining_seconds = (token_exp - now_utc).total_seconds()
 
-    
-    r.set(jti, "revoked", ex=remaining_seconds)
+        
+        app.logger.debug(f"JWT ID (jti): {jti}")
+        app.logger.debug(f"Current time (UTC): {now_utc}")
+        app.logger.debug(f"Token expiration time (UTC): {token_exp}")
+        app.logger.debug(f"Remaining seconds until expiration: {remaining_seconds}")
 
-    return jsonify({"msg": "Successfully logged out"}), 200
+        
+        r.set(jti, "revoked", ex=remaining_seconds)
+
+        return jsonify({"msg": "Successfully logged out"}), 200
+    except Exception as e:
+        app.logger.error(f"Error during logout: {str(e)}")
+        return jsonify({"msg": "Logout failed", "error": str(e)}), 500
 
 # this endpoint gets all the details of a single donation request
 # should be accessible to all
