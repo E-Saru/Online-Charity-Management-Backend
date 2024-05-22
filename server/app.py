@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 from flask import request, jsonify, make_response, Response
 from flask_restful import Api, Resource
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt, JWTManager
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api  
 import cloudinary
@@ -13,6 +13,14 @@ from cloudinary.uploader import upload
 from werkzeug.utils import secure_filename
 import redis
 
+jwt = JWTManager(app)
+
+revoked_store = {}
+
+@jwt.token_in_blocklist_loader
+def check_if_token_is_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+    return jti in revoked_store
 
 
           
@@ -725,13 +733,10 @@ class RevokedToken(db.Model):
 @jwt_required()
 def logout():
     try:
-        jti = get_jwt()['jti']
-        expiration = datetime.now() + timedelta(seconds=int(get_jwt()['exp'] - datetime.now().timestamp()))
-        revoked_token = RevokedToken(jti=jti, expiration=expiration)
-        db.session.add(revoked_token)
-        db.session.commit()
-
-        return jsonify({"msg": "Successfully logged out"}), 200
+        jti = get_jwt()['jti'] 
+        revoked_store[jti] = True  
+        return {"msg": "Successfully logged out"}, 200
+    
     except Exception as e:
         app.logger.error(f"Error during logout: {str(e)}")
         return jsonify({"msg": "Logout failed", "error": str(e)}), 500
