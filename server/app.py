@@ -69,6 +69,10 @@ class SignupResource(Resource):
         #conversion to lower case
         role = data.get('role').lower()
 
+        category = Category.query.filter_by(name=data['category_name']).first()
+        if not category:
+            return {"message": "Category does not exist"}, 404
+
     
         new_user = User(
             name=data.get('name'),
@@ -76,7 +80,7 @@ class SignupResource(Resource):
             role=role,
             location=data.get('location'),
             description=data.get('description'),
-            category_id=data.get('category_id'),
+            category_id=category.id,
             img=data.get('img'),
             contacts=data.get('contacts')
         )
