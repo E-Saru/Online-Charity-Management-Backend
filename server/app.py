@@ -69,7 +69,7 @@ class SignupResource(Resource):
         #conversion to lower case
         role = data.get('role').lower()
 
-        category = Category.query.filter_by(name=data['category']).first()
+        category = Category.query.filter_by(name=data['category_id']).first()
         if not category:
             return {"message": "Category does not exist"}, 404
 
